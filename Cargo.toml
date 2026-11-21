@@ -1,0 +1,17 @@
+[package]
+name = "mtcap"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.80"
+description = "Live packet capture from MikroTik routers into Wireshark: picks a device, starts sniffer streaming over the API, unwraps TZSP"
+license = "MIT"
+repository = "https://github.com/gurevsergey/mtcap"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+
+[profile.release]
+lto = true
+strip = true
