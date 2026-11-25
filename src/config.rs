@@ -11,6 +11,9 @@ pub struct Config {
     pub devices: Vec<Device>,
     #[serde(default, rename = "preset")]
     pub presets: Vec<Preset>,
+    /// Names shown instead of addresses in the terminal view, on top of the router's DHCP leases.
+    #[serde(default)]
+    pub hosts: BTreeMap<String, String>,
 }
 
 #[derive(Deserialize, Clone)]
@@ -61,6 +64,12 @@ const TEMPLATE: &str = r#"# mtcap: devices and filter presets.
 # about = "everything to and from the printer"
 # display = "ip.addr == 192.168.88.50"
 # router = { filter-ip-address = "192.168.88.50/32" }
+
+# Names shown instead of addresses in the terminal view. DHCP leases are read from the
+# router; this is for hosts with static addresses.
+#
+# [hosts]
+# "192.168.88.2" = "nas"
 "#;
 
 /// The built-in presets capture a little more than their name says: the DNS lookup before a web
@@ -90,6 +99,8 @@ fn builtin() -> Vec<Preset> {
         preset("syn", "new TCP connections and refusals",
                &format!("(tcp.flags.syn == 1 && tcp.flags.ack == 0) || tcp.flags.reset == 1 || {unreachable}"),
                &[("filter-ip-protocol", "tcp,icmp")]),
+        preset("tcp", "all TCP", "tcp", &[("filter-ip-protocol", "tcp")]),
+        preset("udp", "all UDP", "udp", &[("filter-ip-protocol", "udp")]),
         preset("bgp", "BGP sessions", "bgp || tcp.flags.reset == 1", &[("filter-port", "179")]),
         preset("ospf", "OSPF", "ospf", &[("filter-ip-protocol", "ospf")]),
         preset("tunnels", "WireGuard and IPsec key exchange", "wg || isakmp || udpencap",

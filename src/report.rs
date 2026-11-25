@@ -56,7 +56,7 @@ pub fn captures_dir() -> PathBuf {
     home.join("captures")
 }
 
-fn latest() -> Result<PathBuf, String> {
+pub fn latest() -> Result<PathBuf, String> {
     let dir = captures_dir();
     let mut files: Vec<(std::time::SystemTime, PathBuf)> = std::fs::read_dir(&dir)
         .map_err(|_| format!("no captures in {}", dir.display()))?
@@ -126,8 +126,12 @@ pub fn run(file: Option<&str>) -> Result<(), String> {
     println!("\nTOP CONVERSATIONS");
     let mut list: Vec<(&(String, String), &(u64, u64))> = pairs.iter().collect();
     list.sort_by(|a, b| b.1 .1.cmp(&a.1 .1).then(a.0.cmp(b.0)));
-    for ((a, b), (count, size)) in list.into_iter().take(8) {
-        println!("  {a:>15} ↔ {b:<15} {count:>7} packets  {:>10}", human(*size));
+    let shown: Vec<_> = list.into_iter().take(8).collect();
+    let ends: Vec<String> = shown.iter().flat_map(|((a, b), _)| [a.clone(), b.clone()]).collect();
+    let places = crate::geo::lookup(&ends);
+    for ((a, b), (count, size)) in shown {
+        let place = places.get(b).or_else(|| places.get(a)).map_or("", String::as_str);
+        println!("  {a:>15} ↔ {b:<15} {count:>7} packets  {:>10}  {place}", human(*size));
     }
     let repeats: u64 = seen.values().filter(|n| **n > 1).map(|n| n - 1).sum();
     let duplicated = ip_packets > 20 && percent(repeats, ip_packets) > 25.0;
